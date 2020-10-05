@@ -8,9 +8,9 @@ def get_parameters():
     parser = argparse.ArgumentParser()
 
     # Training setting
-    parser.add_argument('--batch_size', type=int, default=2)
-    parser.add_argument('--lr', type=float, default=0.05)
-    parser.add_argument('--imsize', type=int, default=112)
+    parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--lr', type=float, default=0.08)
+    parser.add_argument('--imsize', type=int, default=224)
     parser.add_argument('--w_loss', type=float, default=0.0)
 
     # using pretrained
@@ -19,7 +19,7 @@ def get_parameters():
     # Misc
     parser.add_argument('--train', type=str2bool, default=True)
     parser.add_argument('--parallel', type=str2bool, default=False)
-    parser.add_argument('--total_epoch', type=int, default=15)
+    parser.add_argument('--total_epoch', type=int, default=80)
 
     # Path
     parser.add_argument('--image_path', type=str, default='./data')
@@ -28,7 +28,7 @@ def get_parameters():
 
     # Step size
     parser.add_argument('--log_step', type=int, default=100)
-    parser.add_argument('--model_save_step', type=int, default=1000)
+    parser.add_argument('--model_save_step', type=int, default=2000)
     parser.add_argument('--plot_loss_step', type=int, default=20)
     parser.add_argument('--alpha', type=float, default=0.95)
 
