@@ -187,13 +187,13 @@ class Trainer(object):
                 #     print('FAR: {}/{},  FRR: {}/{},  Error of Evalution: {}/{}'.format(FA_nums, 191, FR_nums, 105, FA_nums+FR_nums, total))
                 #     log_file.write('FAR: {}/{},  FRR: {}/{},  Error of Evalution: {}/{} \n'.format(FA_nums, 191, FR_nums, 105, FA_nums+FR_nums, total))
 
-                if (iteration+1) % 100==0:
+                if (iteration+1) % 2000==0:
 
                     scores = []
                     test_labels = []
                     self.model.eval()
                     with torch.no_grad():
-                        tem = 0
+                        # tem = 0
                         for img_test, _, _, _, _, spoof_label_test in self.eval_data_loader:
                             img_test = img_test.to(self.device)
                             # _, _, preds = self.model(img_test)
@@ -207,9 +207,9 @@ class Trainer(object):
                             scores = scores + preds
                             test_labels = test_labels + spoof_label_test
 
-                            tem = tem + 1
-                            if tem ==10:
-                                break
+                            # tem = tem + 1
+                            # if tem ==10:
+                            #     break
 
                         # calculate tpr
                         fpr_list = [0.01, 0.005, 0.001]
