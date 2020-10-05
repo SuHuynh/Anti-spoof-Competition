@@ -12,6 +12,7 @@ from matplotlib import pyplot as plt
 import torch.nn.functional as F
 from utils.attention import calculate_pooling_center_loss, attention_crop_drop
 from scheduler import GradualWarmupScheduler
+from evaluation.eval import get_tpr_from_threshold, get_thresholdtable_from_fpr
 
 classes = ['fake', 'real']
 
@@ -147,7 +148,7 @@ class Trainer(object):
 
                 if (iteration+1) % self.model_save_step==0:
                     torch.save(self.model.state_dict(),
-                               os.path.join(self.model_save_path, '{}_GhostNet.pth'.format(iteration + 1)))
+                               os.path.join(self.model_save_path, '{}_EfficientNet.pth'.format(iteration + 1)))
 
                     loss_eva_total = 0
 
@@ -186,27 +187,34 @@ class Trainer(object):
                 #     print('FAR: {}/{},  FRR: {}/{},  Error of Evalution: {}/{}'.format(FA_nums, 191, FR_nums, 105, FA_nums+FR_nums, total))
                 #     log_file.write('FAR: {}/{},  FRR: {}/{},  Error of Evalution: {}/{} \n'.format(FA_nums, 191, FR_nums, 105, FA_nums+FR_nums, total))
 
-                if (step+1) % 5000==0:
+                if (iteration+1) % 100==0:
 
                     scores = []
                     test_labels = []
                     self.model.eval()
                     with torch.no_grad():
+                        tem = 0
                         for img_test, _, _, _, _, spoof_label_test in self.eval_data_loader:
-                            img_test = img_test.to_device(self.device)
-                            _, _, preds = self.model(img_test)
+                            img_test = img_test.to(self.device)
+                            # _, _, preds = self.model(img_test)
+                            _, _, _, _, _, _, preds = self.model(img_test)
                             preds = preds.cpu().data.numpy().squeeze()
+                            spoof_label_test = spoof_label_test.cpu().data.numpy().squeeze()
 
                             spoof_label_test = list(spoof_label_test.squeeze())
                             preds = list(preds)
 
-                            scores = score + preds
+                            scores = scores + preds
                             test_labels = test_labels + spoof_label_test
+
+                            tem = tem + 1
+                            if tem ==10:
+                                break
 
                         # calculate tpr
                         fpr_list = [0.01, 0.005, 0.001]
-                        threshold_list = get_thresholdtable_from_fpr(scores,labels, fpr_list)
-                        tpr_list = get_tpr_from_threshold(scores,labels, threshold_list)
+                        threshold_list = get_thresholdtable_from_fpr(scores,test_labels, fpr_list)
+                        tpr_list = get_tpr_from_threshold(scores,test_labels, threshold_list)
 
                         # show results
                         print('=========================================================================')
@@ -216,7 +224,7 @@ class Trainer(object):
                         print('=========================================================================')
 
                 # Print out loss info
-                if (step + 1) % self.log_step == 0:               
+                if (iteration + 1) % self.log_step == 0:               
                     print("epoch: {}/{}, interation: {}, overall_loss: {:.5f}".format(epoch+1, self.total_epoch, step+1, overall_loss.item()))
                     print("loss_1: {:.5}, spoof_loss: {:.5}, atr_loss: {:.5}, spoof_type_loss: {:.5}, illum_loss: {:.5}".format(loss1, spoof_loss, atr_loss, spoof_type_loss, illum_loss))
                     print("loss_2: {:.5}, loss_3: {:.5}, feature_center_loss: {:.5}".format(loss2, loss3, feature_center_loss))
@@ -316,7 +324,7 @@ class Trainer(object):
 
 if __name__ == '__main__':
 
-    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
     print(device)
 
     config = get_parameters()
@@ -324,7 +332,7 @@ if __name__ == '__main__':
     data_loader = DataLoader(dataset = dataset, batch_size = config.batch_size, shuffle = True, num_workers=4, pin_memory=False)
 
     eval_dataset = Image_Loader(root_path='./dataloader/data_test_all.csv', image_size=[config.imsize, config.imsize], transforms_data=True, aug = False, phase = 'test')
-    eval_data_loader = DataLoader(dataset = eval_dataset, batch_size = 1, shuffle = False, num_workers=2, pin_memory=False)
+    eval_data_loader = DataLoader(dataset = eval_dataset, batch_size = 32, shuffle = False, num_workers=2, pin_memory=False)
 
     if config.train:
         trainer = Trainer(data_loader, eval_data_loader, config, device)
