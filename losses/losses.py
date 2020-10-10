@@ -27,9 +27,9 @@ class First_Loss(nn.Module):
 
         # env_loss = self.sofmax_loss(env_pred, env_label)
 
-        loss = spoof_loss + 0.1*atr_loss + 0.1*spoof_type_loss + 0.01*illum_loss
+        loss = spoof_loss + 0.01*atr_loss + 0.01*spoof_type_loss + 0.01*illum_loss
 
-        return loss, spoof_loss, 0.1*atr_loss, 0.1*spoof_type_loss, 0.01*illum_loss
+        return loss, spoof_loss, 0.01*atr_loss, 0.01*spoof_type_loss, 0.01*illum_loss
 
 class Recur_Loss(nn.Module):
 

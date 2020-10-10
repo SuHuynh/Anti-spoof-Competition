@@ -40,28 +40,39 @@ class Image_Loader(Dataset):
 
 
         # live or spoof
-        spoof_label = []
-        spoof_label.append(self.data_path.iloc[item, 44])
+        # spoof_label = []
+        # spoof_label.append(self.data_path.iloc[item, 44])
+        # spoof_label = torch.from_numpy(np.array(spoof_label, dtype=np.float32))
+        spoof_label = self.data_path.iloc[item, 44]
         spoof_label = torch.from_numpy(np.array(spoof_label, dtype=np.float32))
 
+
         # 40 face attributes
-        atr_label = []
-        atr_label.append(self.data_path.iloc[item, 1:41])
+        # atr_label = []
+        # atr_label.append(self.data_path.iloc[item, 1:41])
+        # atr_label = torch.from_numpy(np.array(atr_label, dtype=np.float32))
+        atr_label = self.data_path.iloc[item, 1:41]
         atr_label = torch.from_numpy(np.array(atr_label, dtype=np.float32))
 
         # spoof type live 0, photo 1, poster 2, a4 3, upper body mask 5,...
-        spoof_type_label = []
-        spoof_type_label.append(self.data_path.iloc[item, 41])
+        # spoof_type_label = []
+        # spoof_type_label.append(self.data_path.iloc[item, 41])
+        # spoof_type_label = torch.from_numpy(np.array(spoof_type_label, dtype=np.float32))
+        spoof_type_label = self.data_path.iloc[item, 41]
         spoof_type_label = torch.from_numpy(np.array(spoof_type_label, dtype=np.float32))
 
         # illuminations
-        illum_label = []
-        illum_label.append(self.data_path.iloc[item, 42])
+        # illum_label = []
+        # illum_label.append(self.data_path.iloc[item, 42])
+        # illum_label = torch.from_numpy(np.array(illum_label, dtype=np.float32))
+        illum_label = self.data_path.iloc[item, 42]
         illum_label = torch.from_numpy(np.array(illum_label, dtype=np.float32))
 
         # Environments: live, indoor, outdoor
-        env_label = []
-        env_label.append(self.data_path.iloc[item, 43])
+        # env_label = []
+        # env_label.append(self.data_path.iloc[item, 43])
+        # env_label = torch.from_numpy(np.array(env_label, dtype=np.float32))
+        env_label = self.data_path.iloc[item, 43]
         env_label = torch.from_numpy(np.array(env_label, dtype=np.float32))
 
         if self.transforms_data == True and self.phase=='train':

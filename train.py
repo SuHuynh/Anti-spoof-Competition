@@ -1,10 +1,12 @@
 import os
 import numpy as np
 import torch
+import torch.nn as nn
 print(torch.__version__)
 from torch.utils.data import DataLoader
 from dataloader.dataloader import Image_Loader
-from models.GhostNet_bap import ghost_net
+# from models.GhostNet_bap import ghost_net
+from models.EfficientNet_wsdan import EffcientNet_Wsdan
 from losses.losses import First_Loss, Recur_Loss
 from utils.parameter import get_parameters
 import time
@@ -46,9 +48,11 @@ class Trainer(object):
         step_per_epoch = len(self.data_loader)
         # Start with trained model
         if self.pretrained_model:
-            step = self.pretrained_model + 1
+            iteration = self.pretrained_model + 1
+            start_epoch = iteration // len(self.data_loader) + 1
         else:
-            step = 1
+            iteration = 0
+            start_epoch = 0
         # start = 0
         # Start time
         start_time = time.time()
@@ -68,13 +72,14 @@ class Trainer(object):
         scheduler_warmup = GradualWarmupScheduler(self.optimizer, multiplier=1, total_epoch=1000, after_scheduler=scheduler)
 
         # start = 0
-        iteration = 0
-        for epoch in range(0, self.total_epoch):
-            step=0
+        # iteration = 0
+        for epoch in range(start_epoch, self.total_epoch):
+            # step=0
             for img_1, atr_label, spoof_type_label, illum_label, env_label, spoof_label in self.data_loader:
 
-                step = step+1
-                iteration=epoch*len(self.data_loader) + step
+                # step = step+1
+                # iteration=epoch*len(self.data_loader) + step
+                iteration = iteration+1
                 log_file = open('training_log.txt', 'a')
 
                 # if (step+1)%100 !=0:
@@ -83,25 +88,31 @@ class Trainer(object):
                 # ================== Train ================== #
                 self.model.train()
                 # self.adjust_learning_rate(self.optimizer, step, self.lr)
-                img_1 = img_1.to(self.device)
+                # img_1 = img_1.to(self.device)
+                img_1 = img_1.float()
+                img_1 = img_1.cuda()
 
-                atr_label = atr_label.to(self.device)
+                # atr_label = atr_label.to(self.device)
+                atr_label = atr_label.cuda()
                 atr_label = atr_label.squeeze()
-                # atr_label = atr_label.long()
 
-                illum_label = illum_label.to(self.device)
+                # illum_label = illum_label.to(self.device)
+                illum_label = illum_label.cuda()
                 illum_label = illum_label.squeeze()
                 illum_label = illum_label.long()
 
-                spoof_type_label = spoof_type_label.to(self.device)
+                # spoof_type_label = spoof_type_label.to(self.device)
+                spoof_type_label = spoof_type_label.cuda()
                 spoof_type_label = spoof_type_label.squeeze()
                 spoof_type_label = spoof_type_label.long()
 
-                env_label = env_label.to(self.device)
+                # env_label = env_label.to(self.device)
+                env_label = env_label.cuda()
                 env_label = env_label.squeeze()
                 env_label = env_label.long()
 
-                spoof_label = spoof_label.to(self.device)
+                # spoof_label = spoof_label.to(self.device)
+                spoof_label = spoof_label.cuda()
                 spoof_label = spoof_label.squeeze()
                 spoof_label = spoof_label.long()
 
@@ -128,10 +139,13 @@ class Trainer(object):
                 _, _, _, _, _, _, spoof_pred2 = self.model(img_drop)
                 _, _, _, _, _, _, spoof_pred3 = self.model(img_crop)
 
-                loss1, spoof_loss, atr_loss, spoof_type_loss, illum_loss = self.first_loss(atr_pred, spoof_type_pred, illum_pred, env_pred, spoof_pred1, atr_label, spoof_type_label, illum_label, env_label, spoof_label)
+                loss1, spoof_loss, atr_loss, spoof_type_loss, illum_loss = self.first_loss(atr_pred, spoof_type_pred, illum_pred, 
+                        env_pred, spoof_pred1, atr_label, spoof_type_label, illum_label, env_label, spoof_label)
                 loss2 = self.recur_loss(spoof_pred2, spoof_label)/2
                 loss3 = self.recur_loss(spoof_pred3, spoof_label)/2
-
+                # import ipdb; ipdb.set_trace()
+                # print(spoof_pred1)
+                # print('spoof_loss', spoof_loss)
                 overall_loss = loss1 + loss2 + loss3 + feature_center_loss
                     
                 # Backward + Optimize
@@ -149,43 +163,6 @@ class Trainer(object):
                 if (iteration+1) % self.model_save_step==0:
                     torch.save(self.model.state_dict(),
                                os.path.join(self.model_save_path, '{}_EfficientNet.pth'.format(iteration + 1)))
-
-                    loss_eva_total = 0
-
-                # if (step+1) % 5000==0:
-                #     FA_nums=0
-                #     FR_nums=0
-                #     threshold = 0.6
-                #     self.model.eval()
-                #     with torch.no_grad():
-                #         for eval_data in self.eval_data_loader:
-
-                #             eval_img, eval_label, _ = eval_data
-                #             eval_img = eval_img.to(self.device)
-                #             # eval_label = eval_label.to(self.device)
-                #             eval_label = int(eval_label.item())
-
-                #             # Forward
-                #             _, _, preds = self.model(eval_img)
-                #             # print(eval_pre.size())-
-                #             # preds = torch.sigmoid(preds)
-                #             preds = preds.cpu().data.numpy()
-                #             preds = np.squeeze(preds)
-                #             # print(prediction)----------
-                #             if preds>threshold:
-                #                 prediction='real'
-                #                 if classes[eval_label]=='fake':
-                #                     FA_nums=FA_nums+1
-                #             else:
-                #                 prediction='fake'
-                #                 if classes[eval_label]=='real':
-                #                     FR_nums=FR_nums+1
-
-                #     self.model.train()
-                #     # loss_eva_total = loss_eva_total/total
-                #     print('===================EVALUATION========================')
-                #     print('FAR: {}/{},  FRR: {}/{},  Error of Evalution: {}/{}'.format(FA_nums, 191, FR_nums, 105, FA_nums+FR_nums, total))
-                #     log_file.write('FAR: {}/{},  FRR: {}/{},  Error of Evalution: {}/{} \n'.format(FA_nums, 191, FR_nums, 105, FA_nums+FR_nums, total))
 
                 if (iteration+1) % 2000==0:
 
@@ -225,10 +202,10 @@ class Trainer(object):
 
                 # Print out loss info
                 if (iteration + 1) % self.log_step == 0:               
-                    print("epoch: {}/{}, interation: {}, overall_loss: {:.5f}".format(epoch+1, self.total_epoch, step+1, overall_loss.item()))
+                    print("epoch: {}/{}, interation: {}, overall_loss: {:.5f}".format(epoch+1, self.total_epoch, iteration+1, overall_loss.item()))
                     print("loss_1: {:.5}, spoof_loss: {:.5}, atr_loss: {:.5}, spoof_type_loss: {:.5}, illum_loss: {:.5}".format(loss1, spoof_loss, atr_loss, spoof_type_loss, illum_loss))
                     print("loss_2: {:.5}, loss_3: {:.5}, feature_center_loss: {:.5}".format(loss2, loss3, feature_center_loss))
-                    log_file.write("epoch: {}/{}, interation: {}, overall_loss: {:.5f} \n".format(epoch+1, self.total_epoch, step+1, overall_loss.item()))
+                    log_file.write("epoch: {}/{}, interation: {}, overall_loss: {:.5f} \n".format(epoch+1, self.total_epoch, iteration+1, overall_loss.item()))
                     log_file.write("loss_1: {:.5}, atr_loss: {:.5}, spoof_type_loss: {:.5}, illum_loss: {:.5}".format(loss1, atr_loss, spoof_type_loss, illum_loss))
                     log_file.write("loss_2: {:.5}, loss_3: {:.5}, feature_center_loss: {:.5}".format(loss2, loss3, feature_center_loss))
                     log_file.close()
@@ -246,24 +223,25 @@ class Trainer(object):
 
     def build_model(self):
 
-        self.model = ghost_net()
+        self.model = EffcientNet_Wsdan()
         net_dict = self.model.state_dict()
-        if True:
-            pretrained_model = torch.load('Pre_trained_GhostNet.pth')
-            # model.load_state_dict(state_dict)
-            # 1. filter out unnecessary keys
-            pretrained_model = {k: v for k, v in pretrained_model.items() if k in net_dict}
-            # 2. overwrite entries in the existing state dict
-            net_dict.update(pretrained_model)
-            # 3. load the new state dict
-            self.model.load_state_dict(net_dict)
+        # if True:
+        #     pretrained_model = torch.load('Pre_trained_GhostNet.pth')
+        #     # model.load_state_dict(state_dict)
+        #     # 1. filter out unnecessary keys
+        #     pretrained_model = {k: v for k, v in pretrained_model.items() if k in net_dict}
+        #     # 2. overwrite entries in the existing state dict
+        #     net_dict.update(pretrained_model)
+        #     # 3. load the new state dict
+        #     self.model.load_state_dict(net_dict)
 
-        self.model = self.model.to(self.device)
+        self.model = self.model.cuda()
+        print(torch.cuda.device_count())
         if self.parallel:
-            self.model = nn.DataParallel(self.model)
+            self.model = nn.DataParallel(self.model, device_ids=[0,1,2,3]).cuda()
 
-        self.feature_center = torch.zeros(2, 32*160)
-        self.feature_center = self.feature_center.to(self.device)
+        self.feature_center = torch.zeros(2, 32*2048)
+        self.feature_center = self.feature_center.cuda()
         
         # Loss and optimizer
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr, momentum = 0.9, weight_decay = 1e-4)
@@ -277,7 +255,7 @@ class Trainer(object):
 
     def load_pretrained_model(self):
         self.model.load_state_dict(torch.load(os.path.join(
-            'saved_models', '{}_GhostNet_Logictech.pth'.format(self.pretrained_model))), strict=False)
+            'saved_models', '{}_EfficientNet.pth'.format(self.pretrained_model))), strict=False)
         print('loaded trained models (step: {})..!'.format(self.pretrained_model))
         self.model = self.model.to(self.device)
 
@@ -324,9 +302,10 @@ class Trainer(object):
 
 if __name__ == '__main__':
 
-    device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
-    print(device)
-
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # print(device)
+    # device = None
+    
     config = get_parameters()
     dataset = Image_Loader(root_path='./dataloader/data_train_all.csv', image_size=[config.imsize, config.imsize], transforms_data=True, aug = False, phase = 'train')
     data_loader = DataLoader(dataset = dataset, batch_size = config.batch_size, shuffle = True, num_workers=4, pin_memory=False)

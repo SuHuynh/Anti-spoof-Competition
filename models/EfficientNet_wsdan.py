@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import math
 from torchsummary import summary
-# from models.bap import BAP
-from bap import BAP
+from models.bap import BAP
+# from bap import BAP
 import torch.nn.functional as F
 from efficientnet_pytorch import EfficientNet
 
@@ -20,7 +20,7 @@ class BasicConv2d(nn.Module):
         return F.relu(x, inplace=True)
 
 class EffcientNet_Wsdan(nn.Module):
-    def __init__(self, num_classes = 60, M =32, net='efficientnet-b5', pretrained=True):
+    def __init__(self, num_classes = 60, M =32, net='efficientnet-b5', pretrained=False):
         super().__init__()
         self.num_classes=num_classes
         self.M=M
