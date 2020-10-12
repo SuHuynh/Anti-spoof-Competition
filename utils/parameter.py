@@ -8,7 +8,7 @@ def get_parameters():
     parser = argparse.ArgumentParser()
 
     # Training setting
-    parser.add_argument('--batch_size', type=int, default=2)
+    parser.add_argument('--batch_size', type=int, default=10)
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--imsize', type=int, default=112)
     parser.add_argument('--w_loss', type=float, default=0.0)
@@ -18,7 +18,7 @@ def get_parameters():
 
     # Misc
     parser.add_argument('--train', type=str2bool, default=True)
-    parser.add_argument('--parallel', type=str2bool, default=False)
+    parser.add_argument('--parallel', type=str2bool, default=True)
     parser.add_argument('--total_epoch', type=int, default=20)
 
     # Path

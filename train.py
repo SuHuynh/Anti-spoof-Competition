@@ -6,7 +6,8 @@ print(torch.__version__)
 from torch.utils.data import DataLoader
 from dataloader.dataloader import Image_Loader
 # from models.GhostNet_bap import ghost_net
-from models.EfficientNet_wsdan import EffcientNet_Wsdan
+# from models.EfficientNet_wsdan import EffcientNet_Wsdan
+from efficientnet.efficientnet import efficientnet_b3
 from losses.losses import First_Loss, Recur_Loss
 from utils.parameter import get_parameters
 import time
@@ -223,7 +224,7 @@ class Trainer(object):
 
     def build_model(self):
 
-        self.model = EffcientNet_Wsdan()
+        self.model = efficientnet_b3()
         net_dict = self.model.state_dict()
         # if True:
         #     pretrained_model = torch.load('Pre_trained_GhostNet.pth')
@@ -238,9 +239,9 @@ class Trainer(object):
         self.model = self.model.cuda()
         print(torch.cuda.device_count())
         if self.parallel:
-            self.model = nn.DataParallel(self.model, device_ids=[0,1,2,3]).cuda()
+            self.model = nn.DataParallel(self.model, device_ids=[0,1]).cuda()
 
-        self.feature_center = torch.zeros(2, 32*2048)
+        self.feature_center = torch.zeros(2, 32*1536)
         self.feature_center = self.feature_center.cuda()
         
         # Loss and optimizer
