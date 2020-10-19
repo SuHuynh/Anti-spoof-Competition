@@ -31,12 +31,12 @@ class Image_Loader(Dataset):
         image_path = ROOT + os.path.join(self.data_path.iloc[item, 0])
         image = Image.open(image_path)
 
-        if self.aug==True:
+        # if self.aug==True:
 
-            gamma_correction_flag = random.choice([True, False])
+        #     gamma_correction_flag = random.choice([True, False])
 
-            if gamma_correction_flag==True:
-                image = gamma_correction(image)
+        #     if gamma_correction_flag==True:
+        #         image = gamma_correction(image)
 
 
         # live or spoof
@@ -76,7 +76,7 @@ class Image_Loader(Dataset):
         env_label = torch.from_numpy(np.array(env_label, dtype=np.float32))
 
         if self.transforms_data == True and self.phase=='train':
-            data_transform = self.transform(True, True, False, True)
+            data_transform = self.transform(True, True, True, False, True)
             image = data_transform(image)
         else:
             data_transform = self.transform_test()
@@ -86,17 +86,22 @@ class Image_Loader(Dataset):
 
         return image, atr_label, spoof_type_label, illum_label, env_label, spoof_label
 
-    def transform(self, horizon_flip, vertitcal_flip, rotation, totensor):
+    def transform(self, color_jitter, horizon_flip, vertitcal_flip, rotation, totensor):
         options = []
 
         if True:
-            options.append(transforms.Resize(self.image_size))
+            # options.append(transforms.Resize(self.image_size))
+            options.append(transforms.RandomResizedCrop(size=tuple(self.image_size),
+                                scale=(0.9, 1.1)))
+        if color_jitter:
+            options.append(transforms.ColorJitter(brightness=0.4,
+                          contrast=0.4, saturation=0.4, hue=0.1))
         if horizon_flip:
             options.append(transforms.RandomHorizontalFlip(p=0.5))
         if vertitcal_flip:
             options.append(transforms.RandomVerticalFlip(p=0.5))
         if rotation:
-            options.append(transforms.RandomRotation(30, resample=False, expand=False, center=None, fill=None))
+            options.append(transforms.RandomRotation(15, resample=False, expand=False, center=None, fill=None))
         if totensor:
             options.append(transforms.ToTensor())
 

@@ -36,6 +36,7 @@ class Trainer(object):
         self.w_loss = config.w_loss
         self.plot_loss_step = config.plot_loss_step
         self.alpha = config.alpha
+        self.accumulation_step = config.accumulation_step
         self.build_model()
 
         # Start with trained model
@@ -148,11 +149,19 @@ class Trainer(object):
                 # print(spoof_pred1)
                 # print('spoof_loss', spoof_loss)
                 overall_loss = loss1 + loss2 + loss3 + feature_center_loss
-                    
-                # Backward + Optimize
-                self.reset_grad()
+                
+                # in case of small batch --> apply accumulation gradient
+                overall_loss = overall_loss/self.accumulation_step
                 overall_loss.backward()
-                self.optimizer.step()
+
+                if (iteration % self.accumulation_step) == 0:
+                    self.optimizer.step()
+                    self.reset_grad()
+
+                # # Backward + Optimize
+                # self.reset_grad()
+                # overall_loss.backward()
+                # self.optimizer.step()
                 scheduler_warmup.step(iteration)
                 # self.scheduler.step()
 
@@ -224,7 +233,7 @@ class Trainer(object):
 
     def build_model(self):
 
-        self.model = efficientnet_b3()
+        self.model = efficientnet_b3(pretrained=True)
         net_dict = self.model.state_dict()
         # if True:
         #     pretrained_model = torch.load('Pre_trained_GhostNet.pth')
@@ -259,6 +268,11 @@ class Trainer(object):
             'saved_models', '{}_EfficientNet.pth'.format(self.pretrained_model))), strict=False)
         print('loaded trained models (step: {})..!'.format(self.pretrained_model))
         self.model = self.model.to(self.device)
+        # if self.parallel:
+        #     self.model = nn.DataParallel(self.model, device_ids=[0,1]).cuda()
+        # else:
+        #     self.model = self.model.to(self.device)
+
 
     def reset_grad(self):
         self.optimizer.zero_grad()
